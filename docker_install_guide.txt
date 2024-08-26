@@ -1,0 +1,13 @@
+Docker install:
+https://docs.docker.com/engine/install/
+
+
+
+
+To build Docker image:
+docker build -t my-python-app .
+
+Running Docker image:
+docker run -it --entrypoint /bin/sh my-python-app
+
+Note: Every time, you update ml.py you will need to rebuild docker image
