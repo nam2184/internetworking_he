@@ -1,38 +1,48 @@
-from Pyfhel import PyCtxt, Pyfhel
 import numpy as np
+from tqdm import tqdm
 
-def create_he(scheme='ckks', n=8192, scale=2**26, scale_power = 26, n_mults = 6, end_size = 31 ) :
+class FHEBase :
+    def __init__(self, nn, keycompiler, data) -> None:
+        self.nn = nn
+        self.keycompiler = keycompiler
+        self.data = data
+        self.use_sim = False
 
-    HE = Pyfhel()
-    HE.contextGen(scheme=scheme, n=n, scale=scale, qi_sizes=[end_size]+ [scale_power]*n_mults +[end_size])
-    HE.keyGen()
-    return HE
+    def preprocessing(self):
+        pass
 
-class EncryptedNumber :
-    def __init__(self, HE_instance, plaintext = None, cipher = None):
-        self.HE_instance = HE_instance
-        if cipher is None:
-            self.cipher = self.HE_instance.encrypt(plaintext)
-        else :
-            self.cipher = cipher
+    def compile_model(self):
+        pass
 
-    def __add__(self, other):
-        if isinstance(other, EncryptedNumber):
-            e = EncryptedNumber(self.HE_instance, cipher = self.cipher + other.ciphertext())
-        elif isinstance(other, PyCtxt):
-            e = EncryptedNumber(self.HE_instance, cipher = self.cipher + other)
-        elif isinstance(other, np.ndarray):
-            raise ValueError("Encrypt the value first, pass in as EncryptedNumber or Pyctxt")
-        elif isinstance(other, int):
-            raise ValueError("Make np array for better performance")
-        else:
-            raise TypeError("Unsupported operand type(s) for +: 'EncryptedNumber' and '{}'".format(type(other).__name__))
-        return e
+    def test(self): 
+        # Casting the inputs into int64 is recommended
+        all_y_pred = np.zeros((len(self.data)), dtype=np.int64)
+        all_targets = np.zeros((len(self.data)), dtype=np.int64)
 
-    def ciphertext(self):
-        return self.cipher
-    
-    def decrypted(self):
-        return self.HE_instance.decrypt(self.cipher)[0]
+        # Iterate over the test batches and accumulate predictions and ground truth labels in a vector
+        idx = 0
+        for self.data, target in tqdm(self.data):
+            self.data = self.data.numpy()
+            target = target.numpy()
 
+            fhe_mode = "simulate" if self.use_sim else "execute"
 
+            # Quantize the inputs and cast to appropriate self.data type
+            y_pred = self.keycompiler.forward(self.data, fhe=fhe_mode)
+
+            endidx = idx + target.shape[0]
+
+            # Accumulate the ground truth labels
+            all_targets[idx:endidx] = target
+
+            # Get the predicted class id and accumulate the predictions
+            y_pred = np.argmax(y_pred, axis=1)
+            all_y_pred[idx:endidx] = y_pred
+
+            # Update the index
+            idx += target.shape[0]
+
+        # Compute and report results
+        n_correct = np.sum(all_targets == all_y_pred)
+
+        return n_correct / len(self.data)

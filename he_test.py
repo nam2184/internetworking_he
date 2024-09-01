@@ -1,54 +1,80 @@
-import logging
-from he import EncryptedNumber, create_he
-import numpy as np
+import data
+from ml import CNN
+import torch
+from tqdm import tqdm
+from torch import nn
+from he import FHEBase
+from concrete.ml.torch.compile import compile_torch_model
+import time
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+def train_one_epoch(net, optimizer, train_loader):
+    # Cross Entropy loss for classification when not using a softmax layer in the network
+    loss = nn.CrossEntropyLoss()
+    avg_loss = 0
+    correct_predictions = 0
+    total_samples = 0
+    net.train()
+    for data, target in train_loader:
+        optimizer.zero_grad()
+        output = net(data)
+        loss_net = loss(output, target.long())
+        predicted_classes = torch.argmax(output, dim=1)
+        correct_predictions += (predicted_classes == target).sum().item()
+        total_samples += target.size(0)
+        loss_net.backward()
+        optimizer.step()
+        avg_loss += loss_net.item()
 
-class TestCipher:
-    def __init__(self):
-        pass
-
-    def test_encrypt(self):
-        logging.info("Starting test_encrypt")
-
-        plaintext = np.array([10], dtype=np.int64)
-        HE = create_he()
-        e = EncryptedNumber(HE_instance=HE, plaintext=plaintext)
-
-        logging.debug(f"Plaintext: {plaintext}")
-        logging.debug(f"Decrypted number: {e.decrypted()}")
+    accuracy = correct_predictions / total_samples
+    return accuracy, avg_loss / len(train_loader)
 
 
-    def test_operation(self):
-        logging.info("Starting test_operation")
-
-        plaintext1 = np.array([10], dtype=np.int64)
-        plaintext2 = np.array([12], dtype=np.int64)
-        HE = create_he()
-
-        e1 = EncryptedNumber(HE, plaintext=plaintext1)
-        e2 = EncryptedNumber(HE, plaintext=plaintext2)
-        sum_encrypted = e1 + e2
-
-        expected_sum = plaintext1 + plaintext2
-        decrypted_sum = sum_encrypted.decrypted()
-
-        logging.debug(f"Plaintext1: {plaintext1}")
-        logging.debug(f"Plaintext2: {plaintext2}")
-        logging.debug(f"Expected sum: {expected_sum}")
-        logging.debug(f"Decrypted sum: {decrypted_sum}")
- 
-
-    def main(self):
-        logging.info("Starting tests")
-        self.test_encrypt()
-        self.test_operation()
-        logging.info("Tests completed")
-
-if __name__ == '__main__':
-    unittests = TestCipher()
-    unittests.main()
-
+def test_training_no_fhe() :
+    N_EPOCHS = 20
     
+    x_train, x_test, y_train, y_test = data.test_dataset()   
+    
+    # Create a train data loader
+        
+    train_dataset = data.Dataset(x_train, y_train)
+    train_dataloader = train_dataset.load_data()
+    # Create a test data loader to supply batches for network evaluation (test)
 
+    # Train the network with Adam, output the test set accuracy every epoch
+    net = CNN(10)
+    losses_bits = []
+    optimizer = torch.optim.Adam(net.parameters())
+    with tqdm(total = N_EPOCHS, unit=" samples") as pbar:
+        for epoch in range(N_EPOCHS):
+            accuracy, loss = train_one_epoch(net, optimizer, train_dataloader)
+            losses_bits.append(loss)
+            pbar.set_description(f"Epoch {epoch} - Accuracy: {accuracy:.4f} - Loss: {loss:.4f}")
+            pbar.update(1)  # Update progress bar
+    return net
+
+def test_concrete(net) : 
+    x_train, x_test, y_train, y_test = data.test_dataset()   
+          
+    test_dataset = data.Dataset(x_test, y_test)
+    test_dataloader = test_dataset.load_data()
+    
+    q_module = compile_torch_model(net, x_train, rounding_threshold_bits=2, p_error=0.1)
+    t = time.time()
+    q_module.fhe_circuit.keygen()
+    
+    print(f"Keygen time: {time.time()-t:.2f}s")
+    fhe_model = FHEBase(net, q_module, test_dataloader)
+    accuracy_test = fhe_model.test()    
+    elapsed_time = time.time() - t
+    time_per_inference = elapsed_time / len(test_dataset.getdata())
+    accuracy_percentage = 100 * accuracy_test
+
+    print(
+        f"Time per inference in FHE: {time_per_inference:.2f} "
+        f"with {accuracy_percentage:.2f}% accuracy"
+    )
+     
+if __name__ == "__main__":
+    torch.manual_seed(42)
+    net = test_training_no_fhe()
+    test_concrete(net)
