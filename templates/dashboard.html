@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{%block content%}
+
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+        {% for message in messages %}
+            {{ message }}<br>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+<h1>Dashboard</h1>
+    <input type="checkbox" id="hideMusescore">Hide missing Musescore links</input>
+    <input type="checkbox" id="hideYT">Hide missing Youtube links</input>
+    <input type="checkbox" id="hideFile">Hide missing Files</input>
+    <input type="checkbox" id="showMusescore">Show missing Musescore links</input>
+    <input type="checkbox" id="showYT">Show missing Youtube links</input>
+    <input type="checkbox" id="show File">Show missing Files</input>
+
+    <div class = 'flex-container'>
+    {% for image in images | sort(attribute="1") %}
+        <span>
+            <a href='{{url_for ("viewImage", ImageID = image[0])}}' class="ImageIcon">
+            
+                <h1>{{image[1]}}</h1> 
+                
+        
+            </a>
+        </span>
+    {% endfor %}
+    </div>
+
+    
+{% endblock %}

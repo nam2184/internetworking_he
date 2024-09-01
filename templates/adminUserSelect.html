@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% from "_formhelpers.html" import render_field,show_errors %}
+
+<h1>{% block title %} Admin Settings {% endblock %}</h1>
+
+<form method="POST" action="/adminUserSelect">
+    {{ form.csrf_token }}
+
+    {{show_errors()}}
+
+    {{ render_field(form.userID) }}
+    
+    <p>
+        <input type="submit" value="update">
+    </p>
+</form>
+
+{% endblock %}

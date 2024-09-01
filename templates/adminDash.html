@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{% block title %} Admin Settings {% endblock %}</h1>
+
+<a class="adminLinks" href="{{url_for ('adminUserSelect')}}"> Modify User(s)</a></td>
+<a class="adminLinks" href="{{url_for ('adminGlobalSettings')}}"> Modify Global Settings</a></td>
+<a class="adminLinks" href="{{url_for ('manualImport')}}"> Import images</a></td>
+<a class="adminLinks" href="{{url_for ('adminNewUser')}}"> Create new Users</a></td>
+<a class="adminLinks" href="{{url_for ('adminApproveUser')}}"> Approve new Users</a></td>
+
+{% endblock %}

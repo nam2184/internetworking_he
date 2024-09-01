@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{%block content%}
+
+<div class='imageThumbnail'>
+    <img src="{{image.thumbnail}}">
+    <h1> {{image.name}}</h1>
+    <h2> {{image.artist}}</h2>
+
+</div>
+
+<div class="imageButtons">
+
+    <a href='{{url_for ("editImage", imageID = image.id)}}'><button >Edit Details</button></a>
+
+    {% if image.filePath is not none %}
+        <a href='{{url_for ("downloadImage", filepath = image.filePath)}}'><button >Download Image</button></a>
+
+    {%else%}
+        <button disabled>No File Currently Exists</button>
+    {% endif %}
+
+</div>
+
+{% endblock %}
