@@ -25,10 +25,13 @@ class CNN(nn.Module):
         """Run inference on the tiny CNN, apply the decision layer on the reshaped conv output."""
         x = self.conv1(x)
         x = torch.relu(x)
+        x = self.pool(x)
         x = self.conv2(x)
         x = torch.relu(x)
+        x = self.pool(x)
         x = self.conv3(x)
         x = torch.relu(x)
+        x = self.pool(x)
         x = x.flatten(1)
         x = self.fc1(x)
         return x
