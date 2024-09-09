@@ -1,30 +1,33 @@
-from torch.utils.data import DataLoader, TensorDataset
+import numpy as np
 import torch
-import torch.utils
+from torch.utils.data import DataLoader, TensorDataset
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
-import numpy as np
 import matplotlib.pyplot as plt
 
+
+def quantize_input(input_data, num_bits=8):
+    """Quantize input data to a fixed number of bits."""
+    min_val, max_val = np.min(input_data), np.max(input_data)
+    scale = (2 ** num_bits - 1) / (max_val - min_val)
+    quantized_data = np.round((input_data - min_val) * scale).astype(np.uint8)
+    return quantized_data
+
 class Dataset: 
-    def __init__(self, x, y):
-        self.dataset = TensorDataset(torch.Tensor(x), torch.Tensor(y)) 
-
-    def compress(self):
-        pass
+    def __init__(self, x, y, quantize=False):
+        self.quantize = quantize
+        if self.quantize:
+            self.x_data = quantize_input(x)
+        else:
+            self.x_data = x
+        self.y_data = y
+        self.dataset = TensorDataset(torch.Tensor(self.x_data), torch.Tensor(self.y_data))
     
-    def getdata(self):
-        return self.dataset
-
     def load_data(self):
         return DataLoader(self.dataset)
 
-
 def test_dataset():
     X, y = load_digits(return_X_y=True)
-
-    # The sklearn Digits data-set, though it contains digit images, keeps these images in vectors
-    # so we need to reshape them to 2D first. The images are 8x8 px in size and monochrome
     X = np.expand_dims(X.reshape((-1, 8, 8)), 1)
 
     nplot = 4
@@ -38,4 +41,3 @@ def test_dataset():
     )
 
     return x_train, x_test, y_train, y_test
-

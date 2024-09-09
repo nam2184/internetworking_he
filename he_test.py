@@ -8,6 +8,13 @@ from he import FHEBase
 from concrete.ml.torch.compile import compile_torch_model
 import time
 
+def quantize_input(input_data, num_bits=8):
+    """Quantize input data to a fixed number of bits."""
+    min_val, max_val = np.min(input_data), np.max(input_data)
+    scale = (2 ** num_bits - 1) / (max_val - min_val)
+    quantized_data = np.round((input_data - min_val) * scale).astype(np.uint8)
+    return quantized_data
+
 def train_one_epoch(net, optimizer, train_loader):
     # Cross Entropy loss for classification when not using a softmax layer in the network
     loss = nn.CrossEntropyLoss()
@@ -30,22 +37,20 @@ def train_one_epoch(net, optimizer, train_loader):
     return accuracy, avg_loss / len(train_loader)
 
 
-def test_training_no_fhe() :
+def test_training_no_fhe():
     N_EPOCHS = 20
     
-    x_train, x_test, y_train, y_test = data.test_dataset()   
+    x_train, x_test, y_train, y_test = data.test_dataset()
     
-    # Create a train data loader
-        
-    train_dataset = data.Dataset(x_train, y_train)
+    # Create a train data loader with quantization
+    train_dataset = data.Dataset(x_train, y_train, quantize=True)
     train_dataloader = train_dataset.load_data()
-    # Create a test data loader to supply batches for network evaluation (test)
-
+    
     # Train the network with Adam, output the test set accuracy every epoch
     net = CNN(10)
     losses_bits = []
     optimizer = torch.optim.Adam(net.parameters())
-    with tqdm(total = N_EPOCHS, unit=" samples") as pbar:
+    with tqdm(total=N_EPOCHS, unit=" samples") as pbar:
         for epoch in range(N_EPOCHS):
             accuracy, loss = train_one_epoch(net, optimizer, train_dataloader)
             losses_bits.append(loss)
@@ -60,6 +65,9 @@ def test_concrete(net, sample_size=None):
         indices = np.random.choice(len(x_test), size=sample_size, replace=False)
         x_test = x_test[indices]
         y_test = y_test[indices]
+    
+    # Quantize the test data
+    x_test = quantize_input(x_test)
     
     test_dataset = data.Dataset(x_test, y_test)
     test_dataloader = test_dataset.load_data()
@@ -80,7 +88,7 @@ def test_concrete(net, sample_size=None):
         f"with {accuracy_percentage:.2f}% accuracy"
     )
 
-# Sample call
+
 if __name__ == "__main__":
     torch.manual_seed(42)
     net = test_training_no_fhe()  
@@ -89,4 +97,3 @@ if __name__ == "__main__":
     #To test a certain number of samples, input sample_size
     #EG:
     #test_concrete(net, sample_size=X) 
-
