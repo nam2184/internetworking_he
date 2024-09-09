@@ -3,6 +3,7 @@ from ml import CNN
 import torch
 from tqdm import tqdm
 from torch import nn
+import numpy as np
 from he import FHEBase
 from concrete.ml.torch.compile import compile_torch_model
 import time
@@ -52,9 +53,14 @@ def test_training_no_fhe() :
             pbar.update(1)  # Update progress bar
     return net
 
-def test_concrete(net) : 
-    x_train, x_test, y_train, y_test = data.test_dataset()   
-          
+def test_concrete(net, sample_size=None):
+    x_train, x_test, y_train, y_test = data.test_dataset()
+    
+    if sample_size is not None:
+        indices = np.random.choice(len(x_test), size=sample_size, replace=False)
+        x_test = x_test[indices]
+        y_test = y_test[indices]
+    
     test_dataset = data.Dataset(x_test, y_test)
     test_dataloader = test_dataset.load_data()
     
@@ -64,17 +70,23 @@ def test_concrete(net) :
     
     print(f"Keygen time: {time.time()-t:.2f}s")
     fhe_model = FHEBase(net, q_module, test_dataloader)
-    accuracy_test = fhe_model.test()    
+    accuracy_test = fhe_model.test()
     elapsed_time = time.time() - t
-    time_per_inference = elapsed_time / len(test_dataset.getdata())
+    time_per_inference = elapsed_time / (sample_size if sample_size is not None else len(y_test))
     accuracy_percentage = 100 * accuracy_test
 
     print(
         f"Time per inference in FHE: {time_per_inference:.2f} "
         f"with {accuracy_percentage:.2f}% accuracy"
     )
-     
+
+# Sample call
 if __name__ == "__main__":
     torch.manual_seed(42)
-    net = test_training_no_fhe()
-    test_concrete(net)
+    net = test_training_no_fhe()  
+    
+    test_concrete(net) 
+    #To test a certain number of samples, input sample_size
+    #EG:
+    #test_concrete(net, sample_size=X) 
+
