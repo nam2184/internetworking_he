@@ -104,9 +104,6 @@ def autocomplete():
         # Get image name
         autocomplete.append(x[1])
         
-        # Get Artist
-        if x[2] not in autocomplete:
-            autocomplete.append(x[2])
 
     userTags = getUserTags(current_user.get_id())
     for tag in userTags:
@@ -190,17 +187,17 @@ def viewImage(ImageID):
 @login_required
 def downloadImage(filepath):
     filename = escape(filepath)
-    filepath = "./File/" + escape(filepath)
+    filepath = "./Images/" + escape(filepath)
     return send_file(
         filepath,
         download_name=filename,
         as_attachment=True
     )
 
-@app.route("/edit/<ImageID>", methods=['GET', 'POST'])
+@app.route("/edit/<imageID>", methods=['GET', 'POST'])
 @login_required
-def editImage(ImageID):
-    ImageID = escape(ImageID)
+def editImage(imageID):
+    ImageID = escape(imageID)
     image = getImage(ImageID)
     form = imageForm(userID=current_user.get_id(), obj = image)
     if form.validate_on_submit():
@@ -230,11 +227,11 @@ def findImage():
         return render_template('dashboard.html', images = tagImages)
 
 
-@app.route('/deleteImage/<ImageID>')
+@app.route('/deleteImage/<imageID>')
 @login_required
-def deleteImage(ImageID):
-    print(f"Deleting {ImageID}")
-    removeImage(ImageID)
+def deleteImage(imageID):
+    print(f"Deleting {imageID}")
+    removeImage(imageID)
     return redirect(url_for("dashboard"))
 
 # ADMIN Pages
@@ -304,13 +301,13 @@ def adminGlobalSettings():
 
 @app.route("/import", methods=['GET', 'POST'])
 @login_required
-def manualImport():
+def Import():
     if not current_user.admin:
         abort(403)
     form = importForm()
     if form.validate_on_submit():
         flash("Importing...")
-        importImage(form)
+        importImage(form, current_user.get_id())
         flash("Success")
         form = importForm()
         return render_template('importImages.html', form = form)

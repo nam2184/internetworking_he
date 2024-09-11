@@ -1,6 +1,7 @@
 import sqlite3 
 from wsgiref.validate import validator
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm 
+from flask_wtf.file import FileField, FileRequired
 from flask_wtf.form import _Auto
 from wtforms import (StringField, BooleanField, PasswordField, SelectField, 
                      SelectMultipleField, SubmitField)
@@ -80,6 +81,15 @@ def verifyFilePath():
 
     return _checkExists
 
+def verifyFileType():
+
+    def _checkExists(form, field):
+        for x in ['.png', '.jpg', '.jpeg']:
+            if x in field.data:
+                return 
+        raise(ValidationError("This is not a valid file type (png, jpg, or jpeg required)"))
+    
+    return _checkExists
 
 class LoginForm(FlaskForm):
     username = StringField("User Name", validators=[InputRequired()])
@@ -157,16 +167,10 @@ class imageForm(FlaskForm):
 
 # Will most likely need to be modified 
 class importForm(FlaskForm):
-    importFile = SelectField("File to be Imported")
-    image = SelectField("Image")
+    # importFile = FileField("File to be Imported", validators=[FileRequired(), verifyFileType()])
+    importFile = FileField()
+    
 
-    def __init__(self, *args, **kwargs):
-        super(importForm, self).__init__(*args, **kwargs)
-        
-        self.importFile.choices = getImportImages()
-        sortedImages = getAllImages()
-        sortedImages = sorted(sortedImages, key=lambda x: x[1])
-        self.image.choices= sortedImages
 
 class SearchForm(FlaskForm):
     autocomp = StringField('Search Image', id='search_autocomplete')

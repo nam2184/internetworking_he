@@ -33,7 +33,7 @@
                 
                 {% if current_user.admin %}
                     <a href="{{ url_for('adminSettings') }}" class="list-group-item list-group-item-action bg-light">Admin Settings</a>
-                    <a href="{{ url_for('manualImport') }}" class="list-group-item list-group-item-action bg-light">Import Image</a>
+                    <a href="{{ url_for('Import') }}" class="list-group-item list-group-item-action bg-light">Import Image</a>
                     <a href="{{ url_for('adminNewUser') }}" class="list-group-item list-group-item-action bg-light">Add New User</a>
                     <a href="{{ url_for('adminApproveUser') }}" class="list-group-item list-group-item-action bg-light">Approve New Users</a>
                 {% endif %}

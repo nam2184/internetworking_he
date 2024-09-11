@@ -9,8 +9,8 @@ def getImage(id):
     class Image():
         def __init__(self, info) -> None:
             self.id = info[0]
-            self.name = info[1]
-            self.filePath = info[2]
+            self.filePath = info[1]
+            self.tag = info[2]
 
     return Image(info)
 

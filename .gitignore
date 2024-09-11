@@ -1,3 +1,6 @@
 .conda
 .venv
 **/__pycache__
+secret
+Images/*
+db/imageSQL.db
