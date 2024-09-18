@@ -18,7 +18,7 @@ from Lib.Python.ImageHandler import getArtistImages, getImage, getImageID, getTa
 from Lib.Python.Users import User, acceptSignups, addSignup, addUser, declineSignups, getUserImages, getUserTags, removeUser, updateUserInfo, updateUserInfoAdmin, verifyUser
 from Lib.Python.environmentHandler import createDB, importImage, initialiseSettings, updateEnvironment
 
-
+from PIL import Image
 
 # Environment Initialisation
 # Allow for logging of events
@@ -307,9 +307,9 @@ def Import():
     form = importForm()
     if form.validate_on_submit():
         flash("Importing...")
+        print(request.files)
         importImage(form, current_user.get_id())
         flash("Success")
-        form = importForm()
         return render_template('importImages.html', form = form)
 
     return render_template('importImages.html', form = form)

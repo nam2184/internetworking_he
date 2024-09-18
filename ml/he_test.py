@@ -7,6 +7,7 @@ import numpy as np
 from he import FHEBase
 from concrete.ml.torch.compile import compile_torch_model
 import time
+import matplotlib.pyplot as plt
 
 def quantize_input(input_data, num_bits=8):
     """Quantize input data to a fixed number of bits."""
@@ -41,7 +42,8 @@ def test_training_no_fhe():
     N_EPOCHS = 20
     
     x_train, x_test, y_train, y_test = data.test_dataset()
-    
+    print(len(y_train)) 
+    print(len(y_test)) 
     # Create a train data loader with quantization
     train_dataset = data.Dataset(x_train, y_train, quantize=True)
     train_dataloader = train_dataset.load_data()
@@ -49,13 +51,17 @@ def test_training_no_fhe():
     # Train the network with Adam, output the test set accuracy every epoch
     net = CNN(10)
     losses_bits = []
+    accuracies = []
     optimizer = torch.optim.Adam(net.parameters())
-    with tqdm(total=N_EPOCHS, unit=" samples") as pbar:
+    with tqdm(total=N_EPOCHS, unit="epochs") as pbar:
         for epoch in range(N_EPOCHS):
             accuracy, loss = train_one_epoch(net, optimizer, train_dataloader)
             losses_bits.append(loss)
+            accuracies.append(accuracy)
             pbar.set_description(f"Epoch {epoch} - Accuracy: {accuracy:.4f} - Loss: {loss:.4f}")
             pbar.update(1)  # Update progress bar
+    saving_figs(losses_bits, "Epoch", "Cross Entropy Loss", "Training set loss", "loss_training.png")
+    saving_figs(accuracies, "Epoch", "Accuracy", "Training set accuracy", "accuracy_training.png")
     return net
 
 def test_concrete(net, sample_size=None):
@@ -88,7 +94,16 @@ def test_concrete(net, sample_size=None):
         f"with {accuracy_percentage:.2f}% accuracy"
     )
 
-
+def saving_figs(x, x_label, y_label, title, filename):
+    fig = plt.figure(figsize=(8, 4))
+    plt.plot(x)
+    plt.ylabel(y_label)
+    plt.xlabel(x_label)
+    plt.title(title)
+    plt.grid(True)
+    plt.savefig("plots/"+filename)
+    plt.close(fig)  # Close the figure to release resources
+    
 if __name__ == "__main__":
     torch.manual_seed(42)
     net = test_training_no_fhe()  

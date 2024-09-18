@@ -11,9 +11,6 @@ from torch.quantization import QuantStub, DeQuantStub
 # which is important in FHE where operations are expensive.
 
 
-
-
-
 class QuantizedCNN(nn.Module):
     """A small quantized CNN adapted for FHE to classify a simple dataset."""
 
@@ -66,7 +63,7 @@ class QuantizedCNN(nn.Module):
 
     def fuse_model(self):
         """Fuse the convolution and activation layers for efficient FHE operations."""
-        # Fuse conv and relu layers for efficient FHE compatibility
+        # Fuse conv and relu layers for efficient FHE compatibilit                                                                                                                                              
         torch.quantization.fuse_modules(self, [['conv1', 'relu1'], ['conv2', 'relu2'], ['conv3', 'relu3']], inplace=True)
 
     def quantize_model(self):

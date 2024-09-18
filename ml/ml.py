@@ -11,7 +11,6 @@ from concrete.ml.torch.compile import compile_torch_model
 class CNN(nn.Module):
     """A very small CNN to classify the sklearn digits data-set."""
 
-
     def __init__(self, n_classes):
         super().__init__()
         self.conv1 = nn.Conv2d(1, 4, 3, stride=1, padding=1)  # Output: 8x8
