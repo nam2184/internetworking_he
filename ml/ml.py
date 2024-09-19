@@ -24,3 +24,5 @@ class CNN(nn.Module):
         x = x.flatten(1)  # Flatten
         x = self.fc1(x)
         return x
+    
+

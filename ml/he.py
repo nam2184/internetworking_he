@@ -21,14 +21,13 @@ class FHEBase :
 
         # Iterate over the test batches and accumulate predictions and ground truth labels in a vector
         idx = 0
-        for self.data, target in tqdm(self.data):
-            self.data = self.data.numpy()
+        for data, target in tqdm(self.data):
+            data = data.numpy()
             target = target.numpy()
 
             fhe_mode = "simulate" if self.use_sim else "execute"
-
             # Quantize the inputs and cast to appropriate self.data type
-            y_pred = self.keycompiler.forward(self.data, fhe=fhe_mode)
+            y_pred = self.keycompiler.forward(data, fhe=fhe_mode)
 
             endidx = idx + target.shape[0]
 
@@ -41,8 +40,6 @@ class FHEBase :
 
             # Update the index
             idx += target.shape[0]
-
         # Compute and report results
         n_correct = np.sum(all_targets == all_y_pred)
-
         return n_correct / len(self.data)
